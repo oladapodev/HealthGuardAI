@@ -1,35 +1,37 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
 
-const UserSchema = new mongoose.Schema({
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    profile: {
-        firstName: String,
-        lastName: String,
-        age: Number,
-        gender: { type: String, enum: ['male', 'female', 'other', 'prefer-not-to-say'] },
-        bloodGroup: String,
-        height: Number, // in cm
-        weight: Number, // in kg
-        conditions: [String],
-        allergies: [String],
-        medications: [String],
-        menstrualCycle: {
-            lastPeriodDate: Date,
-            cycleLength: { type: Number, default: 28 },
-            active: { type: Boolean, default: false }
-        }
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true,
     },
-    dailyLogs: [{
-        date: { type: Date, default: Date.now },
-        mood: String,
-        symptoms: [String],
-        foodTags: [String],
-        sleepHours: Number,
-        exercise: String,
-        notes: String
-    }],
-    createdAt: { type: Date, default: Date.now }
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  profile: {
+    type: DataTypes.JSONB,
+    defaultValue: {},
+  },
+  dailyLogs: {
+    type: DataTypes.JSONB,
+    defaultValue: [],
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+  },
 });
 
-export const User = mongoose.model('User', UserSchema);
+export { User };
+

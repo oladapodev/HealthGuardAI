@@ -8,7 +8,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 async function testGroq() {
   try {
     const completion = await groq.chat.completions.create({
-      model: 'gemma-7b-it', // Lightweight, widely available Groq model
+      model: 'llama-3.3-70b-versatile', // Use a current model from listmodel.cjs
       messages: [
         { role: 'user', content: 'Hello, respond in one sentence.' }
       ]

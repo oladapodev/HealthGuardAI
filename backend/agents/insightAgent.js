@@ -22,7 +22,7 @@ Provide:
   - Avoid language that perpetuates racial, gender, or age-based medical biases.
 - BIAS MITIGATION: Avoid stereotypes. Use evidence-based medical reasoning that respects the user's demographic context (ancestry, gender, age) without bias.
 - No diagnosis.
-`;,oldString:,oldString:
+`;
 
   return await runAI(prompt);
 }

@@ -48,7 +48,7 @@ export const analyzeHealth = async (req, res) => {
         let input = req.body;
         
         // 🟢 STEP 0: FETCH USER PROFILE
-        const user = await User.findById(req.user.id);
+        const user = await User.findByPk(req.user.id || req.user);
         const profile = user?.profile || {};
         
         // 🟢 STEP 1: INTAKE AGENT (Extraction)

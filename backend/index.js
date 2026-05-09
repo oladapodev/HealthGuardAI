@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import mongoose from "mongoose";
+import sequelize from "./config/db.js";
 import analyzeRoutes from "./routes/analyzeRoute.js";
 import userRoutes from "./routes/userRoute.js";
 
@@ -15,13 +15,14 @@ app.use(cors());
 app.use(express.json());
 
 // Database Connection
-mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/healthguard")
-    .then(() => console.log("✅ MongoDB Connected"))
-    .catch(err => console.error("❌ MongoDB Connection Error:", err));
+sequelize.sync()
+    .then(() => console.log("✅ PostgreSQL Connected"))
+    .catch(err => console.error("❌ PostgreSQL Connection Error:", err));
 
 // Routes
 app.use("/api/health", analyzeRoutes);
 app.use("/api/users", userRoutes);
+app.use("/analyze", analyzeRoutes);
 
 // Basic Health Check
 app.get("/", (req, res) => {
