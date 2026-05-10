@@ -5,16 +5,42 @@ dotenv.config();
 
 const databaseUrl = process.env.DATABASE_URL || '';
 const dbPassword = String(process.env.DB_PASSWORD ?? '');
+const dbSsl = process.env.DB_SSL === 'true' || process.env.DB_SSLMODE === 'require' || databaseUrl.includes('sslmode=require');
+const dbSslRejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true';
+
+function normalizeDatabaseUrl(url) {
+  if (!url) return '';
+
+  try {
+    const parsed = new URL(url);
+
+    // pg parses sslmode from the connection string and can replace the
+    // explicit ssl object below. Keep SSL policy centralized here so Aiven
+    // self-signed chains can use rejectUnauthorized=false unless a CA is set.
+    parsed.searchParams.delete('sslmode');
+    parsed.searchParams.delete('ssl');
+    parsed.searchParams.delete('sslcert');
+    parsed.searchParams.delete('sslkey');
+    parsed.searchParams.delete('sslrootcert');
+
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+const connectionUrl = normalizeDatabaseUrl(databaseUrl);
 export const dbDebugConfig = {
-  mode: databaseUrl ? 'DATABASE_URL' : 'DB_FIELDS',
+  mode: connectionUrl ? 'DATABASE_URL' : 'DB_FIELDS',
   name: process.env.DB_NAME || 'healthguard',
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT || 5432),
-  ssl: process.env.DB_SSL === 'true' || process.env.DB_SSLMODE === 'require' || databaseUrl.includes('sslmode=require'),
+  ssl: dbSsl,
+  sslRejectUnauthorized: dbSslRejectUnauthorized,
   passwordType: typeof dbPassword,
   passwordLength: dbPassword.length,
-  hasPassword: databaseUrl ? databaseUrl.includes(':') : dbPassword.length > 0,
+  hasPassword: connectionUrl ? connectionUrl.includes(':') : dbPassword.length > 0,
 };
 
 if (process.env.NODE_ENV !== 'production') {
@@ -28,12 +54,12 @@ const sharedOptions = {
   dialect: 'postgres',
   logging: false,
   ...(dbDebugConfig.ssl
-    ? { dialectOptions: { ssl: { require: true, rejectUnauthorized: false } } }
+    ? { dialectOptions: { ssl: { require: true, rejectUnauthorized: dbSslRejectUnauthorized } } }
     : {}),
 };
 
-const sequelize = databaseUrl
-  ? new Sequelize(databaseUrl, sharedOptions)
+const sequelize = connectionUrl
+  ? new Sequelize(connectionUrl, sharedOptions)
   : new Sequelize({
       database: dbDebugConfig.name,
       username: dbDebugConfig.user,
