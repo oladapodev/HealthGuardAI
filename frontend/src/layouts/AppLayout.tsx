@@ -125,41 +125,37 @@ export default function AppLayout() {
         )}
       </div>
 
-      {/* ── Mobile floating pill dock ────────────────────────────────────── */}
-      <nav className="fixed bottom-5 inset-x-0 z-50 md:hidden flex justify-center pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-border/60 bg-card/85 px-2 py-2 shadow-2xl shadow-black/20 backdrop-blur-2xl">
+      {/* ── Mobile bottom nav ────────────────────────────────────────────── */}
+      <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t border-border safe-area-inset-bottom">
+        <div className="flex items-stretch max-w-md mx-auto">
           {MOBILE_NAV.map(({ to, Icon, label }) => (
-            <NavLink key={to} to={to}>
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                cn(
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors relative",
+                  isActive ? "text-primary" : "text-muted-foreground",
+                )
+              }
+            >
               {({ isActive }) => (
-                <div className="relative flex flex-col items-center justify-center w-[3.75rem] h-12 select-none">
+                <>
                   {isActive && (
                     <motion.div
-                      layoutId="dock-bubble"
-                      className="absolute inset-0 rounded-full bg-primary/12"
+                      layoutId="nav-pill"
+                      className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary"
                       transition={{ type: "spring", stiffness: 420, damping: 36 }}
                     />
                   )}
                   <motion.span
-                    animate={{ y: isActive ? -1 : 0 }}
+                    animate={{ scale: isActive ? 1.12 : 1, y: isActive ? -1 : 0 }}
                     transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                    className="relative z-10"
                   >
-                    <Icon
-                      size={22}
-                      weight={isActive ? "fill" : "regular"}
-                      className={cn(
-                        "transition-colors duration-150",
-                        isActive ? "text-primary" : "text-muted-foreground",
-                      )}
-                    />
+                    <Icon size={21} weight={isActive ? "fill" : "regular"} />
                   </motion.span>
-                  <span className={cn(
-                    "relative z-10 text-[9px] font-semibold leading-none mt-0.5 transition-colors duration-150",
-                    isActive ? "text-primary" : "text-muted-foreground",
-                  )}>
-                    {label}
-                  </span>
-                </div>
+                  <span className="text-[9px] font-medium leading-none">{label}</span>
+                </>
               )}
             </NavLink>
           ))}

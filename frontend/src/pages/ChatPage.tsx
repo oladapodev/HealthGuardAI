@@ -42,8 +42,8 @@ export default function ChatPage() {
     toast.error(errorMessage(err))
   }
 
-  const sendFirst = tsr.chat.send.useMutation({ onSuccess: ({ body }) => onSuccess(body), onError })
-  const sendMore  = tsr.chat.sendMessage.useMutation({ onSuccess: ({ body }) => onSuccess(body), onError })
+  const sendFirst = tsr.chat.send.useMutation({ onSuccess: ({ body }: { body: ChatResponse }) => onSuccess(body), onError })
+  const sendMore  = tsr.chat.sendMessage.useMutation({ onSuccess: ({ body }: { body: ChatResponse }) => onSuccess(body), onError })
 
   const isPending = sendFirst.isPending || sendMore.isPending
 
