@@ -57,12 +57,12 @@ export default function AuthPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    loginMut.mutate({ body: { email, password: pw } })
+    loginMut.mutate({ body: { email: normalizeEmail(email), password: pw } })
   }
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault()
-    registerMut.mutate({ body: { email, password: pw } })
+    registerMut.mutate({ body: { email: normalizeEmail(email), password: pw } })
   }
 
   const isPending = loginMut.isPending || registerMut.isPending
@@ -130,6 +130,7 @@ function PwField({ value, onChange, show, onToggle, hint }: {
       <div className="relative">
         <Input id="pw" type={show ? "text" : "password"} value={value}
           onChange={e => onChange(e.target.value)} required
+          minLength={8}
           placeholder={hint ?? "••••••••"} autoComplete="current-password"
           className="pr-10" />
         <button type="button" onClick={onToggle}
@@ -141,8 +142,26 @@ function PwField({ value, onChange, show, onToggle, hint }: {
   )
 }
 
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase()
+}
+
 function extractMsg(err: unknown): string {
   if (!err || typeof err !== "object") return "Something went wrong"
-  const e = err as { body?: { message?: string }; message?: string }
+  const e = err as {
+    body?: {
+      message?: string
+      error?: string
+      errors?: { field?: string; message?: string }[]
+    }
+    message?: string
+  }
+  const firstValidationError = e.body?.errors?.find(item => item.message)
+  if (firstValidationError?.message) {
+    return firstValidationError.field
+      ? `${firstValidationError.field}: ${firstValidationError.message}`
+      : firstValidationError.message
+  }
+
   return e.body?.message ?? e.message ?? "Something went wrong"
 }
