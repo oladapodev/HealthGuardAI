@@ -1,5 +1,4 @@
-
-import { model } from "../config/ai.js";
+import { getGroqClient } from "../config/ai.js";
 import models from "./listmodel.cjs";
 
 // Change this index to select a different model from the list
@@ -13,9 +12,15 @@ export function setModelIndex(idx) {
 const GROQ_MODEL = () => models[1];
 
 export async function runAI(prompt, retries = 3) {
+  const client = getGroqClient();
+
+  if (!client) {
+    throw new Error("AI service is not configured. Set GROQ_API_KEY in backend/.env.");
+  }
+
   for (let i = 0; i < retries; i++) {
     try {
-      const completion = await model.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model: models[modelIndex],
         messages: [
           { role: 'user', content: prompt }

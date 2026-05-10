@@ -26,7 +26,16 @@ STRUCTURE:
 2. BACKGROUND: Relevant patient history, meds, and environmental context.
 3. ASSESSMENT: Data-driven analysis of lab results and symptomatic correlations.
 4. RECOMMENDATION: Specific items for clinical review (e.g., "Consider follow-up CMP", "Screen for respiratory triggers").
-`;,oldString:
+
+Return STRICT JSON ONLY:
+{
+  "SBAR_Situation": "",
+  "SBAR_Background": "",
+  "SBAR_Assessment": "",
+  "SBAR_Recommendation": "",
+  "priorityFlags": ["normal" | "monitor" | "urgent"]
+}
+`;
 
   return await runAI(prompt);
 }

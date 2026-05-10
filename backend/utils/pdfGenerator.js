@@ -7,6 +7,10 @@ import PDFDocument from 'pdfkit';
  */
 export function generateHealthReport(data, res) {
     const doc = new PDFDocument({ margin: 50 });
+    const structured = data.structured || {};
+    const symptoms = Array.isArray(structured.symptoms) ? structured.symptoms : [];
+    const colorCodedLabs = data.colorCodedLabs || {};
+    const clinicianSummary = data.clinicianSummary || {};
 
     // Stream the PDF directly to the response
     doc.pipe(res);
@@ -19,21 +23,25 @@ export function generateHealthReport(data, res) {
 
     // Patient Info
     doc.fontSize(14).text('Patient Summary', { underline: true });
-    doc.fontSize(12).text(`Age: ${data.structured.age}`);
-    doc.fontSize(12).text(`Gender: ${data.structured.gender}`);
-    doc.fontSize(12).text(`Symptoms: ${data.structured.symptoms.join(', ')}`);
+    doc.fontSize(12).text(`Age: ${structured.age || 'Not provided'}`);
+    doc.fontSize(12).text(`Gender: ${structured.gender || 'Not provided'}`);
+    doc.fontSize(12).text(`Symptoms: ${symptoms.length ? symptoms.join(', ') : 'Not provided'}`);
     doc.moveDown();
 
     // Analysis
     doc.fontSize(14).text('AI Insight', { underline: true });
-    doc.fontSize(12).text(data.insight);
+    doc.fontSize(12).text(data.insight || data.patientSummary || 'No insight available.');
     doc.moveDown();
 
     // Lab Analysis
     doc.fontSize(14).text('Lab Visual Insights', { underline: true });
-    Object.entries(data.colorCodedLabs).forEach(([test, color]) => {
-        doc.fontSize(12).text(`${test}: ${color}`);
+    Object.entries(colorCodedLabs).forEach(([test, value]) => {
+        const status = typeof value === 'object' ? value.status : value;
+        doc.fontSize(12).text(`${test}: ${status}`);
     });
+    if (Object.keys(colorCodedLabs).length === 0) {
+        doc.fontSize(12).text('No parsed lab markers available.');
+    }
     doc.moveDown();
 
     // Clinician Section
@@ -44,10 +52,10 @@ export function generateHealthReport(data, res) {
     doc.moveDown(0.5);
     
     const sbarContent = [
-        { label: 'SITUATION', text: data.clinicianSummary.SBAR_Situation },
-        { label: 'BACKGROUND', text: data.clinicianSummary.SBAR_Background },
-        { label: 'ASSESSMENT', text: data.clinicianSummary.SBAR_Assessment },
-        { label: 'RECOMMENDATION', text: data.clinicianSummary.SBAR_Recommendation }
+        { label: 'SITUATION', text: clinicianSummary.SBAR_Situation || 'Not provided.' },
+        { label: 'BACKGROUND', text: clinicianSummary.SBAR_Background || 'Not provided.' },
+        { label: 'ASSESSMENT', text: clinicianSummary.SBAR_Assessment || 'Not provided.' },
+        { label: 'RECOMMENDATION', text: clinicianSummary.SBAR_Recommendation || 'Not provided.' }
     ];
 
     let currentY = clinicianBoxTop + 45;

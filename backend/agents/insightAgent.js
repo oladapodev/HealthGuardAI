@@ -21,7 +21,16 @@ Provide:
   - Acknowledge socioeconomic factors that may impact health outcomes.
   - Avoid language that perpetuates racial, gender, or age-based medical biases.
 - BIAS MITIGATION: Avoid stereotypes. Use evidence-based medical reasoning that respects the user's demographic context (ancestry, gender, age) without bias.
-- No diagnosis.
+- No diagnosis, prescriptions, or medication dosing.
+
+Return STRICT JSON ONLY:
+{
+  "patientSummary": "plain-language explanation",
+  "riskFactors": ["risk or context factors"],
+  "environmentalImpact": "weather or air quality relevance",
+  "keySignals": ["lab/symptom/environment patterns"],
+  "doctorQuestions": ["safe questions the user can ask a clinician"]
+}
 `;
 
   return await runAI(prompt);

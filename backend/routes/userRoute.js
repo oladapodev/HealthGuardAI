@@ -3,11 +3,18 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 import { auth } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import {
+    dailyCheckinDto,
+    loginUserDto,
+    registerUserDto,
+    updateProfileDto
+} from '../dtos/userDtos.js';
 
 const router = express.Router();
 
 // 🟢 REGISTER / ONBOARD
-router.post('/register', async (req, res) => {
+router.post('/register', registerUserDto, validate, async (req, res) => {
     try {
         const { email, password, profile } = req.body;
         
@@ -31,7 +38,7 @@ router.post('/register', async (req, res) => {
 });
 
 // 🟢 LOGIN
-router.post('/login', async (req, res) => {
+router.post('/login', loginUserDto, validate, async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ where: { email } });
@@ -55,7 +62,7 @@ router.get('/profile', auth, async (req, res) => {
     res.json(user);
 });
 
-router.put('/profile', auth, async (req, res) => {
+router.put('/profile', auth, updateProfileDto, validate, async (req, res) => {
     const { profile } = req.body;
     await User.update({ profile }, { where: { id: req.user } });
     const user = await User.findByPk(req.user, {
@@ -65,7 +72,7 @@ router.put('/profile', auth, async (req, res) => {
 });
 
 // 🟢 DAILY CHECK-IN
-router.post('/checkin', auth, async (req, res) => {
+router.post('/checkin', auth, dailyCheckinDto, validate, async (req, res) => {
     const { log } = req.body;
     const user = await User.findByPk(req.user);
     if (!user) return res.status(404).json({ message: 'User not found' });

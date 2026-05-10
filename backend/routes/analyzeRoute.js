@@ -5,6 +5,8 @@ import multer from "multer";
 import { analyzeHealth, downloadReport } from "../controllers/analyzeController.js";
 import { upload } from "../middleware/upload.js";
 import { auth } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import { analyzeHealthDto, downloadReportDto } from "../dtos/analyzeDtos.js";
 
 const router = express.Router();
 
@@ -18,7 +20,7 @@ const handleMulterError = (err, req, res, next) => {
   next();
 };
 
-router.post("/", auth, upload.single('picture'), handleMulterError, analyzeHealth);
-router.post("/download", auth, downloadReport);
+router.post("/", auth, upload.single('picture'), handleMulterError, analyzeHealthDto, validate, analyzeHealth);
+router.post("/download", auth, downloadReportDto, validate, downloadReport);
 
 export default router;

@@ -24,6 +24,10 @@ export async function contextAgent(location = "Lagos") {
       aqi: pollution.main.aqi, // 1: Good, 2: Fair, 3: Moderate, 4: Poor, 5: Very Poor
       pm2_5: pollution.components.pm2_5,
       pm10: pollution.components.pm10,
+      no2: pollution.components.no2,
+      o3: pollution.components.o3,
+      co: pollution.components.co,
+      so2: pollution.components.so2,
       location,
     };
 

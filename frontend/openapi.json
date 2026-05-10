@@ -1,0 +1,1380 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HealthGuard AI Backend API",
+    "version": "1.0.0",
+    "description": "Patient-facing health companion API with profile, check-ins, lab ingestion, multi-agent analysis, chat, and clinician report generation."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "error": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "example": "profile.age"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Age must be between 0 and 130"
+                },
+                "value": {}
+              }
+            }
+          }
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "example": "Alex"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Doe"
+          },
+          "age": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 130,
+            "example": 29
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female",
+              "other",
+              "prefer_not_to_say"
+            ],
+            "example": "female"
+          },
+          "bloodGroup": {
+            "type": "string",
+            "example": "O+"
+          },
+          "height": {
+            "type": "number",
+            "example": 168
+          },
+          "weight": {
+            "type": "number",
+            "example": 64
+          },
+          "location": {
+            "type": "string",
+            "example": "Lagos"
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "asthma"
+            ]
+          },
+          "allergies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "pollen"
+            ]
+          },
+          "medications": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": []
+          },
+          "menstrualCycle": {
+            "$ref": "#/components/schemas/MenstrualCycle"
+          }
+        },
+        "additionalProperties": true
+      },
+      "MenstrualCycle": {
+        "type": "object",
+        "properties": {
+          "lastPeriod": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-05-01"
+          },
+          "cycleLength": {
+            "type": "integer",
+            "example": 28
+          },
+          "symptoms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "cramps"
+            ]
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "token": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "alex@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "example": "password123"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "alex@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          }
+        }
+      },
+      "ProfileRequest": {
+        "type": "object",
+        "required": [
+          "profile"
+        ],
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          }
+        }
+      },
+      "CheckinLog": {
+        "type": "object",
+        "properties": {
+          "mood": {
+            "type": "string",
+            "example": "Tired"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Headache after poor sleep"
+          },
+          "symptoms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "headache"
+            ]
+          },
+          "foodTags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "coffee"
+            ]
+          },
+          "sleep": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "hours": 5
+            }
+          },
+          "exercise": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "minutes": 20
+            }
+          },
+          "source": {
+            "type": "string",
+            "example": "manual"
+          },
+          "voiceText": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CheckinRequest": {
+        "type": "object",
+        "required": [
+          "log"
+        ],
+        "properties": {
+          "log": {
+            "$ref": "#/components/schemas/CheckinLog"
+          }
+        }
+      },
+      "Checkin": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CheckinLog"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "metadata": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      },
+      "LabValue": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "example": 11.2
+          },
+          "unit": {
+            "type": "string",
+            "example": "g/dL"
+          },
+          "sourceLine": {
+            "type": "string"
+          }
+        }
+      },
+      "LabResults": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/LabValue"
+        },
+        "example": {
+          "hemoglobin": {
+            "value": 11.2,
+            "unit": "g/dL"
+          }
+        }
+      },
+      "LabUpload": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "parsedResults": {
+            "$ref": "#/components/schemas/LabResults"
+          },
+          "extractedTextPreview": {
+            "type": "string"
+          }
+        }
+      },
+      "AnalysisRequest": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "example": "Lagos"
+          },
+          "text": {
+            "type": "string",
+            "example": "I have cough and chest tightness."
+          },
+          "message": {
+            "type": "string",
+            "example": "Can you help me understand my labs?"
+          },
+          "symptoms": {
+            "oneOf": [
+              {
+                "type": "string",
+                "example": "cough, chest tightness"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": [
+                  "cough",
+                  "chest tightness"
+                ]
+              }
+            ]
+          },
+          "age": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 29
+          },
+          "gender": {
+            "type": "string",
+            "example": "female"
+          },
+          "labResults": {
+            "$ref": "#/components/schemas/LabResults"
+          },
+          "manualLabResults": {
+            "$ref": "#/components/schemas/LabResults"
+          },
+          "menstrualCycle": {
+            "$ref": "#/components/schemas/MenstrualCycle"
+          }
+        }
+      },
+      "Context": {
+        "type": "object",
+        "properties": {
+          "temperature": {
+            "type": "number",
+            "nullable": true
+          },
+          "humidity": {
+            "type": "number",
+            "nullable": true
+          },
+          "condition": {
+            "type": "string"
+          },
+          "aqi": {
+            "type": "integer",
+            "nullable": true
+          },
+          "pm2_5": {
+            "type": "number",
+            "nullable": true
+          },
+          "pm10": {
+            "type": "number",
+            "nullable": true
+          },
+          "no2": {
+            "type": "number",
+            "nullable": true
+          },
+          "o3": {
+            "type": "number",
+            "nullable": true
+          },
+          "location": {
+            "type": "string"
+          }
+        }
+      },
+      "ClinicianSummary": {
+        "type": "object",
+        "properties": {
+          "SBAR_Situation": {
+            "type": "string"
+          },
+          "SBAR_Background": {
+            "type": "string"
+          },
+          "SBAR_Assessment": {
+            "type": "string"
+          },
+          "SBAR_Recommendation": {
+            "type": "string"
+          },
+          "priorityFlags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "normal",
+                "monitor",
+                "urgent"
+              ]
+            }
+          }
+        }
+      },
+      "AnalysisResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "structured": {
+            "$ref": "#/components/schemas/AnalysisRequest"
+          },
+          "context": {
+            "$ref": "#/components/schemas/Context"
+          },
+          "insight": {
+            "type": "string"
+          },
+          "patientSummary": {
+            "type": "string"
+          },
+          "clinicianSummary": {
+            "$ref": "#/components/schemas/ClinicianSummary"
+          },
+          "colorCodedLabs": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "safetyAlerts": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "riskFactors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nextQuestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "agentTrace": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "labUpload": {
+            "$ref": "#/components/schemas/LabUpload"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChatRequest": {
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "example": "Cough and fatigue"
+          },
+          "text": {
+            "type": "string",
+            "example": "I have a cough and feel tired today"
+          },
+          "message": {
+            "type": "string"
+          },
+          "symptoms": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "location": {
+            "type": "string",
+            "example": "Lagos"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "chat",
+              "full_analysis",
+              "doctor_note"
+            ],
+            "example": "chat"
+          },
+          "runAnalysis": {
+            "type": "boolean",
+            "example": false
+          },
+          "labResults": {
+            "$ref": "#/components/schemas/LabResults"
+          },
+          "manualLabResults": {
+            "$ref": "#/components/schemas/LabResults"
+          },
+          "menstrualCycle": {
+            "$ref": "#/components/schemas/MenstrualCycle"
+          }
+        }
+      },
+      "ChatMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Conversation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "example": "active"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            }
+          },
+          "state": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChatResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "conversationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message": {
+            "type": "string"
+          },
+          "nextQuestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "readyForAnalysis": {
+            "type": "boolean"
+          },
+          "suggestedActions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "capturedContext": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/AnalysisResponse"
+          },
+          "disclaimer": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "LimitQuery": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "IdPath": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    }
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Service health check",
+        "responses": {
+          "200": {
+            "description": "Backend is running"
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": "API v1 health check",
+        "responses": {
+          "200": {
+            "description": "API v1 is running"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "summary": "Register a user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or duplicate user error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Login user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile": {
+      "get": {
+        "summary": "Get current user profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update current user profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated"
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/checkins": {
+      "get": {
+        "summary": "List daily check-ins",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LimitQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Check-ins returned"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a daily check-in",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Check-in stored"
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/labs": {
+      "get": {
+        "summary": "List lab uploads",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LimitQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Uploads returned"
+          }
+        }
+      }
+    },
+    "/api/v1/labs/upload": {
+      "post": {
+        "summary": "Extract text and markers from a lab PDF/image",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "metadata": {
+                    "type": "string",
+                    "description": "Optional JSON string metadata"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lab uploaded and parsed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "labUpload": {
+                      "$ref": "#/components/schemas/LabUpload"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses": {
+      "get": {
+        "summary": "List analyses",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LimitQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analyses returned"
+          }
+        }
+      },
+      "post": {
+        "summary": "Run full multi-agent health analysis",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "labResults": {
+                    "type": "string",
+                    "description": "Optional JSON string for multipart requests"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Analysis completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safety refusal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses/{id}": {
+      "get": {
+        "summary": "Get one analysis",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analysis returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/analyses/{id}/report": {
+      "post": {
+        "summary": "Generate clinician bridge PDF",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF stream returned",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/chat": {
+      "post": {
+        "summary": "Conversational health entry point",
+        "description": "Creates or continues a lightweight health conversation. It asks follow-up questions by default and only runs full multi-agent analysis when `runAnalysis` is true or `intent` is `full_analysis`/`doctor_note`.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Chat response returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/sessions": {
+      "get": {
+        "summary": "List chat sessions",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LimitQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversations returned"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a chat session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "Lab question"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Conversation created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "conversation": {
+                      "$ref": "#/components/schemas/Conversation"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/sessions/{id}": {
+      "get": {
+        "summary": "Get a chat session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversation returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "conversation": {
+                      "$ref": "#/components/schemas/Conversation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/chat/sessions/{id}/messages": {
+      "post": {
+        "summary": "Continue a chat session",
+        "description": "Adds a user message, updates captured context, asks follow-up questions, and optionally creates a full analysis when requested.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Assistant reply returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

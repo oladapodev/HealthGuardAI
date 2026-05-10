@@ -31,7 +31,7 @@ Output format:
      "Specific question prompt 1",
      "Specific question prompt 2"
   ],
-  "is_complete": boolean (true if we have enough to give a full diagnosis/insight)
+  "is_complete": boolean (true if we have enough to give an educational insight)
 }
 
 Input:

@@ -27,11 +27,6 @@ const User = sequelize.define('User', {
     type: DataTypes.JSONB,
     defaultValue: [],
   },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
 });
 
 export { User };
-
